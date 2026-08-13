@@ -1,0 +1,49 @@
+const trades = [];
+
+const symbols = [
+  "RELIANCE",
+  "TCS",
+  "INFY",
+  "HDFCBANK",
+  "ICICIBANK",
+  "SBIN",
+  "ITC",
+  "WIPRO",
+  "AXISBANK",
+  "LT",
+];
+
+const sides = ["BUY", "SELL"];
+
+const clientsCount = 300;
+
+for (let i = 1; i <= 5000; i++) {
+  const clientNumber = ((i - 1) % clientsCount) + 1;
+
+  const clientId = `C${String(clientNumber).padStart(3, "0")}`;
+
+  const date = new Date(2026, 7, 1 + (i % 13));
+
+  const quantity = Math.floor(Math.random() * 500) + 1;
+
+  const price = Number(
+    (Math.random() * 4000 + 100).toFixed(2)
+  );
+
+  const brokerage = Number(
+    (quantity * price * 0.0005).toFixed(2)
+  );
+
+  trades.push({
+    id: `T${String(i).padStart(5, "0")}`,
+    clientId,
+    tradeDate: date.toISOString().split("T")[0],
+    symbol: symbols[i % symbols.length],
+    side: sides[i % sides.length],
+    quantity,
+    price,
+    brokerage,
+  });
+}
+
+module.exports = trades;

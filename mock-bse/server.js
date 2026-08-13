@@ -1,21 +1,26 @@
-require("dotenv").config();
-
 const express = require("express");
-const cors = require("cors");
+const dotenv = require("dotenv");
+
+dotenv.config();
+
+const bseRoutes = require("./src/routes/bse.routes");
 
 const app = express();
 
-app.use(cors());
 app.use(express.json());
 
-app.get("/", (req, res) => {
-  res.json({
-    message: "Server is running",
+app.use("/api/bse", bseRoutes);
+
+app.get("/health", (req, res) => {
+  res.status(200).json({
+    success: true,
+    service: "mock-bse",
+    status: "healthy",
   });
 });
 
 const PORT = process.env.PORT || 4000;
 
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`Mock BSE API running on port ${PORT}`);
 });

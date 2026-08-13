@@ -6,8 +6,12 @@ arham-assignment/
 │   │   ├── routes/
 │   │   ├── services/
 │   │   ├── data/
-│   │   └── server.ts
-│   └── package.json
+│   │   ├── config/
+│   │   └── app.js
+│   │
+│   ├── server.js
+│   ├── package.json
+│   └── .env
 │
 ├── backend/
 │   ├── src/
@@ -15,9 +19,20 @@ arham-assignment/
 │   │   ├── routes/
 │   │   ├── services/
 │   │   ├── workers/
+│   │   ├── middleware/
 │   │   ├── db/
-│   │   └── server.ts
-│   └── package.json
+│   │   │   ├── migrations/
+│   │   │   └── seeds/
+│   │   ├── config/
+│   │   └── app.js
+│   │
+│   ├── server.js
+│   ├── knexfile.js
+│   ├── package.json
+│   └── .env                    
+│
+├── .gitignore
+└── README.md
 │
 ├── frontend/
 │   ├── src/
