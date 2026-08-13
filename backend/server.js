@@ -13,6 +13,14 @@ app.get("/", (req, res) => {
     message: "Server is running",
   });
 });
+app.get("/health", (req, res) => {
+  res.status(200).json({
+    success: true,
+    service: "arham-backend",
+    status: "healthy",
+  });
+});
+
 
 const PORT = process.env.PORT || 3000;
 

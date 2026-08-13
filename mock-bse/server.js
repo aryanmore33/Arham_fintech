@@ -4,12 +4,14 @@ const dotenv = require("dotenv");
 dotenv.config();
 
 const bseRoutes = require("./src/routes/bse.routes");
+const internalRoutes = require("./src/routes/internal.routes")
 
 const app = express();
 
 app.use(express.json());
 
 app.use("/api/bse", bseRoutes);
+app.use("/api/internal", internalRoutes);
 
 app.get("/health", (req, res) => {
   res.status(200).json({
