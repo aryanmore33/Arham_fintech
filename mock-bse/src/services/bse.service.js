@@ -4,27 +4,28 @@ const trades = require("../data/trades");
 const delay = (ms) =>
   new Promise((resolve) => setTimeout(resolve, ms));
 
-const getDelay = () => {
-  return Number(process.env.BSE_DELAY_MS || 5000);
-};
+const getDelay = () =>
+  Number(process.env.BSE_DELAY_MS || 5000);
 
-const getFailureRate = () => {
-  return Number(process.env.BSE_FAILURE_RATE || 0.2);
-};
+const getFailureRate = () =>
+  Number(process.env.BSE_FAILURE_RATE || 0.2);
 
-const getBatchSize = () => {
-  return Number(process.env.BSE_BATCH_SIZE || 500);
-};
+const getBatchSize = () =>
+  Number(process.env.BSE_BATCH_SIZE || 500);
 
-const getBatchDelay = () => {
-  return Number(process.env.BSE_BATCH_DELAY_MS || 1000);
-};
+const getBatchDelay = () =>
+  Number(process.env.BSE_BATCH_DELAY_MS || 1000);
+
+
+
+//  Simulates processing of one BSE pull.
 
 const processPull = async (data) => {
   const batchSize = getBatchSize();
   const batchDelay = getBatchDelay();
 
-  const shouldFail = Math.random() < getFailureRate();
+  const shouldFail =
+    Math.random() < getFailureRate();
 
   const failurePoint = shouldFail
     ? Math.floor(
@@ -35,11 +36,9 @@ const processPull = async (data) => {
   let processed = 0;
 
   while (processed < data.length) {
-    const remaining = data.length - processed;
-
     const currentBatchSize = Math.min(
       batchSize,
-      remaining
+      data.length - processed
     );
 
     processed += currentBatchSize;
@@ -52,10 +51,6 @@ const processPull = async (data) => {
       failurePoint !== null &&
       processed >= failurePoint
     ) {
-      console.log(
-        `BSE: simulated mid-pull failure at ${processed}/${data.length}`
-      );
-
       const error = new Error(
         `BSE pull failed after ${processed}/${data.length} records`
       );
@@ -75,55 +70,91 @@ const processPull = async (data) => {
   return data;
 };
 
-const getClients = async () => {
-  console.log("BSE: starting clients pull");
+
+//  Get paginated clients.
+const getClients = async ({
+  offset = 0,
+  limit = 500,
+}) => {
+  console.log(
+    `BSE clients request: offset=${offset}, limit=${limit}`
+  );
 
   await delay(getDelay());
 
-  const result = await processPull(clients);
+  const page = clients.slice(
+    offset,
+    offset + limit
+  );
 
-  console.log("BSE: clients pull completed");
+  await processPull(page);
 
-  return result;
+  return {
+    data: page,
+    total: clients.length,
+    offset,
+    limit,
+    hasMore: offset + page.length < clients.length,
+  };
 };
 
+
+
+// Get paginated trades.
 const getTrades = async ({
+  offset = 0,
+  limit = 500,
   clientId,
   from,
   to,
 }) => {
-  console.log("BSE: starting trades pull");
+  console.log(
+    `BSE trades request: offset=${offset}, limit=${limit}`
+  );
 
   await delay(getDelay());
 
-  let result = trades;
+  let filteredTrades = trades;
 
   if (clientId) {
-    result = result.filter(
-      (trade) => trade.clientId === clientId
+    filteredTrades = filteredTrades.filter(
+      (trade) =>
+        trade.clientId === clientId
     );
   }
 
   if (from) {
-    result = result.filter(
-      (trade) => trade.tradeDate >= from
+    filteredTrades = filteredTrades.filter(
+      (trade) =>
+        trade.tradeDate >= from
     );
   }
 
   if (to) {
-    result = result.filter(
-      (trade) => trade.tradeDate <= to
+    filteredTrades = filteredTrades.filter(
+      (trade) =>
+        trade.tradeDate <= to
     );
   }
 
-  const processedResult = await processPull(result);
-
-  console.log(
-    `BSE: trades pull completed. ${processedResult.length} records`
+  const page = filteredTrades.slice(
+    offset,
+    offset + limit
   );
 
-  return processedResult;
+  await processPull(page);
+
+  return {
+    data: page,
+    total: filteredTrades.length,
+    offset,
+    limit,
+    hasMore:
+      offset + page.length <
+      filteredTrades.length,
+  };
 };
+
 
 module.exports = {
   getClients,
