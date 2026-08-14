@@ -1,43 +1,34 @@
-const { fetchTradesPage, fetchClientsPage, fetchEmployees, fetchMappings } = require("../services/bse.service")
+const { createExport, fetchExportPage, fetchEmployees, fetchMappings } = require("../services/bse.service")
 const { createSyncRun, updateSyncRun, stageTrades, stageClients, promoteRun } = require("../services/sync.service")
 const db = require("../config/db");
 const bcrypt = require("bcrypt");
-const { BSE_PAGE_SIZE } = require("../config/bse");
+const { BSE_PAGE_SIZE, BSE_EXPORT_POLL_MS } = require("../config/bse");
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+// Starts a server-side BSE export instantly, then polls its tiny status/page
+// requests. No HTTP request is held open for the source's 10-minute runtime.
+const pullExport = async (resource, filters, onPage) => {
+  const job = await createExport({ resource, ...filters });
+  let offset = 0;
+  while (true) {
+    const response = await fetchExportPage(job.data.id, { offset, limit: BSE_PAGE_SIZE });
+    if (response.status === "PENDING") { await sleep(Math.min(response.retryAfterMs || BSE_EXPORT_POLL_MS, BSE_EXPORT_POLL_MS)); continue; }
+    const rows = response.data || [];
+    if (rows.length) await onPage(rows);
+    if (!response.hasMore) return;
+    offset += rows.length;
+  }
+};
 
 const runBseSync = async () => {
     console.log("BSE SYNC STARTED");
     const syncRun = await createSyncRun();
     console.log(`Sync run: ${syncRun.id}`);
     try {
-        let offset = 0;
         let totalReceived = 0;
-        // Pull clients first: foreign keys can never point at an unseen client.
-        while (true) {
-          const response = await fetchClientsPage({ offset, limit: BSE_PAGE_SIZE });
-          const clients = response.data || [];
-          if (!clients.length) break;
-          await db.transaction((trx) => stageClients(trx, syncRun.id, clients));
-          if (clients.length < BSE_PAGE_SIZE) break;
-          offset += BSE_PAGE_SIZE;
-        }
-        offset = 0;
-        while (true) {
-            console.log(`Fetching trades from offset ${offset}`)
-            const response = await fetchTradesPage({ offset, limit: BSE_PAGE_SIZE })
-            const trades = response.data || [];
-            if (trades.length === 0) {
-                break;
-            }
-            await db.transaction(async (trx) => {
-                await stageTrades(trx, syncRun.id, trades)
-            })
-            totalReceived += trades.length;
-            console.log(`Received ${trades.length} trades`);
-            if (trades.length < BSE_PAGE_SIZE) {
-                break;
-            }
-            offset += BSE_PAGE_SIZE
-        }
+        // Clients arrive before trades so promotion cannot violate foreign keys.
+        await pullExport("clients", {}, (clients) => db.transaction((trx) => stageClients(trx, syncRun.id, clients)));
+        await pullExport("trades", {}, async (trades) => { await db.transaction((trx) => stageTrades(trx, syncRun.id, trades)); totalReceived += trades.length; });
         const [employees, mappings] = await Promise.all([fetchEmployees(), fetchMappings()]);
         const imported = await db.transaction(async (trx) => {
           const promoted = await promoteRun(trx, syncRun.id);

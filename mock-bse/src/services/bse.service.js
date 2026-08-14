@@ -1,5 +1,7 @@
 const clients = require("../data/clients");
 const trades = require("../data/trades");
+const crypto = require("crypto");
+const exportsById = new Map();
 
 const delay = (ms) =>
   new Promise((resolve) => setTimeout(resolve, ms));
@@ -151,8 +153,40 @@ const getTrades = async ({
   };
 };
 
+const addDemoTrade = () => {
+  const trade = { id: `LIVE${Date.now()}`, clientId: "C001", tradeDate: new Date().toISOString().slice(0, 10), symbol: "RELIANCE", side: "BUY", quantity: 100, price: 2950, brokerage: 5000 };
+  trades.push(trade);
+  return trade;
+};
+
+const createExport = ({ resource, clientId, from, to }) => {
+  let data = resource === "clients" ? clients : trades;
+  if (resource === "trades" && clientId) data = data.filter((trade) => trade.clientId === clientId);
+  if (resource === "trades" && from) data = data.filter((trade) => trade.tradeDate >= from);
+  if (resource === "trades" && to) data = data.filter((trade) => trade.tradeDate <= to);
+  const id = crypto.randomUUID();
+  exportsById.set(id, { data, readyAt: Date.now() + getDelay() });
+  return { id, status: "PENDING", retryAfterMs: Math.min(getDelay(), 5000) };
+};
+const getExport = (id) => {
+  const job = exportsById.get(id);
+  if (!job) return null;
+  return Date.now() < job.readyAt ? { id, status: "PENDING", retryAfterMs: Math.min(job.readyAt - Date.now(), 5000) } : { id, status: "READY", total: job.data.length };
+};
+const getExportPage = async (id, { offset = 0, limit = 500 }) => {
+  const job = exportsById.get(id);
+  if (!job) { const error = new Error("Unknown export job"); error.code = "EXPORT_NOT_FOUND"; throw error; }
+  if (Date.now() < job.readyAt) return { status: "PENDING", retryAfterMs: Math.min(job.readyAt - Date.now(), 5000) };
+  const page = job.data.slice(Number(offset), Number(offset) + Number(limit));
+  await processPull(page);
+  return { status: "READY", data: page, total: job.data.length, offset: Number(offset), limit: Number(limit), hasMore: Number(offset) + page.length < job.data.length };
+};
 
 module.exports = {
   getClients,
   getTrades,
+  addDemoTrade,
+  createExport,
+  getExport,
+  getExportPage,
 };

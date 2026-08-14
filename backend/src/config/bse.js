@@ -20,6 +20,7 @@ const BSE_RETRY_BASE_DELAY_MS = Number(
 const BSE_PAGE_SIZE = Number(
   process.env.BSE_PAGE_SIZE || 500
 );
+const BSE_EXPORT_POLL_MS = Number(process.env.BSE_EXPORT_POLL_MS || 1000);
 
 module.exports = {
   BSE_BASE_URL,
@@ -28,4 +29,5 @@ module.exports = {
   BSE_MAX_RETRIES,
   BSE_RETRY_BASE_DELAY_MS,
   BSE_PAGE_SIZE,
+  BSE_EXPORT_POLL_MS,
 };

@@ -11,6 +11,8 @@ This repository contains the mock BSE service and the internal incentive portal.
 
 The React portal URL is `http://localhost:5173`; the API is `http://localhost:3000`; the mock API is `http://localhost:4000`.
 
+For an immediate presentation database, run `npm run seed:demo` from `backend`. It upserts 300 clients, 5,000 trades, 20 employees, and their mappings. Managers can use **Add live demo trade**: it inserts a new BSE trade, begins a sync, and every connected portal refreshes automatically when the sync is atomically promoted.
+
 For a single deployed service, run `npm run build` in `frontend`; the backend detects `frontend/dist` and serves that React build at `http://localhost:3000`.
 
 ## API
@@ -28,7 +30,7 @@ On a fresh database, the first manager login bootstraps `manager@arham.com` with
 
 ## Reliability design
 
-Each BSE request has a 25-second client timeout, retry/backoff, and pagination. A worker stores every page under a unique sync run. It promotes staging rows to the read model in one database transaction only after all client and trade pages arrive. Therefore a failed pull (including a mid-pull 503) leaves the previously complete portal snapshot untouched; upserts make retries idempotent. Screens query indexed local tables and are independent of BSE availability. The server broadcasts `data:updated` through Socket.IO after a successful promotion, so open screens refresh themselves.
+The worker starts a BSE export job, then polls short status/page requests with a 25-second client timeout, retry/backoff, and pagination. This means the source may take ten minutes without holding any HTTP request open past the network limit. A worker stores every page under a unique sync run and promotes staging rows to the read model in one database transaction only after all client and trade pages arrive. Therefore a failed pull (including a mid-pull 503) leaves the previously complete portal snapshot untouched; upserts make retries idempotent. Screens query indexed local tables and are independent of BSE availability. The server broadcasts `data:updated` through Socket.IO after a successful promotion, so open screens refresh themselves.
 
 ## At 100× volume
 

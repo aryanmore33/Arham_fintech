@@ -65,10 +65,16 @@ const fetchMappings = async () => {
     const response = await internalClient.get("/mappings")
     return response.data;
 }
+const createDemoTrade = async () => (await bseClient.post("/demo-trades")).data;
+const createExport = async (data) => (await bseClient.post("/exports", data)).data;
+const fetchExportPage = async (id, params) => requestWithRetry(() => bseClient.get(`/exports/${id}`, { params }), `BSE export ${id}`);
 
 module.exports= {
     fetchClientsPage,
   fetchTradesPage,
   fetchEmployees,
   fetchMappings,
+  createDemoTrade,
+  createExport,
+  fetchExportPage,
 }

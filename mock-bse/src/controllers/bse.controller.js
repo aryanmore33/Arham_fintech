@@ -50,7 +50,17 @@ const getTrades = async (req, res) => {
   }
 };
 
+const createDemoTrade = (_req, res) => res.status(201).json({ success: true, data: bseService.addDemoTrade() });
+const createExport = (req, res) => res.status(202).json({ success: true, data: bseService.createExport(req.body) });
+const getExport = async (req, res) => {
+  try { const page = await bseService.getExportPage(req.params.id, req.query); return res.json({ success: true, ...page }); }
+  catch (error) { return res.status(error.code === "EXPORT_NOT_FOUND" ? 404 : 503).json({ success: false, error: error.message, code: error.code }); }
+};
+
 module.exports = {
   getClients,
   getTrades,
+  createDemoTrade,
+  createExport,
+  getExport,
 };
