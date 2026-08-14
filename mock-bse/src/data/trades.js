@@ -24,11 +24,9 @@ for (let i = 1; i <= 5000; i++) {
 
   const date = new Date(2026, 7, 1 + (i % 13));
 
-  const quantity = Math.floor(Math.random() * 500) + 1;
-
-  const price = Number(
-    (Math.random() * 4000 + 100).toFixed(2)
-  );
+  // Deterministic seed-style values make demo brokerage figures stable across restarts.
+  const quantity = ((i * 37) % 500) + 1;
+  const price = Number((((i * 97) % 400000) / 100 + 100).toFixed(2));
 
   const brokerage = Number(
     (quantity * price * 0.0005).toFixed(2)

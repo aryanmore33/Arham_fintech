@@ -1,5 +1,6 @@
 const mappings = [];
 
+const employees = require("./employees");
 const employeeCount = 19;
 const clientCount = 300;
 
@@ -8,7 +9,7 @@ for (let clientNumber = 1; clientNumber <= clientCount; clientNumber++) {
     ((clientNumber - 1) % employeeCount) + 2;
 
   mappings.push({
-    employeeId: `E${String(employeeNumber).padStart(3, "0")}`,
+    employeeId: employees[employeeNumber - 1].id,
     clientId: `C${String(clientNumber).padStart(3, "0")}`,
   });
 }

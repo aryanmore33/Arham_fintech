@@ -16,8 +16,6 @@ const getBatchSize = () =>
 const getBatchDelay = () =>
   Number(process.env.BSE_BATCH_DELAY_MS || 1000);
 
-
-
 //  Simulates processing of one BSE pull.
 
 const processPull = async (data) => {
@@ -97,8 +95,6 @@ const getClients = async ({
     hasMore: offset + page.length < clients.length,
   };
 };
-
-
 
 // Get paginated trades.
 const getTrades = async ({

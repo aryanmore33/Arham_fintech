@@ -1,5 +1,6 @@
 const express = require("express");
 const dotenv = require("dotenv");
+const cors = require("cors");
 
 dotenv.config();
 
@@ -8,6 +9,7 @@ const internalRoutes = require("./src/routes/internal.routes")
 
 const app = express();
 
+app.use(cors());
 app.use(express.json());
 
 app.use("/api/bse", bseRoutes);

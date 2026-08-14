@@ -39,9 +39,10 @@ const requestWithRetry = async (requestFn, label) => {
 
 // Fetch one page of clients.
 const fetchClientsPage = async ({offset = 0, limit}) => {
-    return requestWithRetry(() => bseClient.get("/clients", {params: {offset, limit}})
-        `BSE clients [${offset}-${offset + limit}]`
-    )
+    return requestWithRetry(
+      () => bseClient.get("/clients", { params: { offset, limit } }),
+      `BSE clients [${offset}-${offset + limit}]`
+    );
 }
 
 // Fetch one page of trades.
@@ -49,9 +50,10 @@ const fetchTradesPage = async ({
     offset = 0,
     limit, clientId, from, to, 
 }) => {
-    return requestWithRetry(() => bseClient.get("/trades", {params: {offset, limit, clientId, from, to}})
-        `BSE trades [${offset}-${offset + limit}]`
-    )
+    return requestWithRetry(
+      () => bseClient.get("/trades", { params: { offset, limit, clientId, from, to } }),
+      `BSE trades [${offset}-${offset + limit}]`
+    );
 }
 
 // Internal application is reliable, so we don't need BSE-style retry logic here.

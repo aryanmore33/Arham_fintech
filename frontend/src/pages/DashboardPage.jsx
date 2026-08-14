@@ -1,0 +1,25 @@
+import { useCallback, useEffect, useState } from "react";
+import { io } from "socket.io-client";
+import { useAuth } from "../context/AuthContext";
+import { createEmployee, getEmployees, getViewData, startSync } from "../api/portal";
+import AddEmployeeForm from "../components/AddEmployeeForm";
+import DataTable from "../components/DataTable";
+
+const managerTabs = [["clients", "All Clients"], ["trades", "All Trades"], ["employees", "All Employees"], ["employee-clients", "Employee Clients"], ["incentives", "All Incentives"]];
+const employeeTabs = [["clients", "My Clients"], ["trades", "My Trades"], ["incentives", "My Incentive"]];
+const money = new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR" });
+
+export default function DashboardPage() {
+  const { user, logout } = useAuth(); const manager = user.role === "MANAGER";
+  const [view, setView] = useState("clients"), [rows, setRows] = useState([]), [employees, setEmployees] = useState([]), [employeeId, setEmployeeId] = useState("");
+  const [filters, setFilters] = useState({ clientId: "", from: "", to: "" }), [error, setError] = useState(""), [loading, setLoading] = useState(false), [syncing, setSyncing] = useState(false);
+  const tabs = manager ? managerTabs : employeeTabs;
+  const load = useCallback(async () => { if (view === "employee-clients" && !employeeId) return; setLoading(true); try { setError(""); setRows((await getViewData(view, { employeeId, filters, manager })).data); } catch (err) { setError(err.message); } finally { setLoading(false); } }, [view, employeeId, filters, manager]);
+  const loadEmployees = useCallback(async () => { if (!manager) return; try { setEmployees((await getEmployees()).data); } catch (err) { setError(err.message); } }, [manager]);
+  useEffect(() => { loadEmployees(); }, [loadEmployees]);
+  useEffect(() => { load(); }, [load]);
+  useEffect(() => { const socket = io(import.meta.env.VITE_API_BASE_URL); socket.on("data:updated", () => { setSyncing(false); load(); }); return () => socket.close(); }, [load]);
+  const sync = async () => { try { setSyncing(true); await startSync(); } catch (err) { setSyncing(false); setError(err.message); } };
+  const addEmployee = async (employee) => { try { await createEmployee(employee); await loadEmployees(); await load(); } catch (err) { setError(err.message); throw err; } };
+  return <div className="mx-auto min-h-screen max-w-7xl px-4 py-8 sm:px-6"><header className="mb-8 flex flex-col justify-between gap-4 rounded-2xl bg-slate-900 p-6 text-white sm:flex-row"><div><p className="text-xs font-bold tracking-widest text-cyan-300">ARHAM FINTECH · {user.role}</p><h1 className="mt-1 text-2xl font-bold">Welcome, {user.name}</h1><p className="mt-1 text-sm text-slate-300">Local data remains available during BSE refreshes.</p></div><div className="flex gap-2">{manager && <button className="rounded-lg bg-cyan-400 px-4 py-2 font-bold text-slate-950" onClick={sync}>{syncing ? "Sync running…" : "Sync BSE"}</button>}<button className="rounded-lg border border-slate-600 px-4 py-2" onClick={logout}>Sign out</button></div></header><nav className="mb-6 flex flex-wrap gap-2 border-b pb-4">{tabs.map(([key, label]) => <button key={key} className={`rounded-lg px-3 py-2 text-sm font-semibold ${view === key ? "bg-slate-900 text-white" : "text-slate-600 hover:bg-slate-200"}`} onClick={() => setView(key)}>{label}</button>)}</nav><div className="mb-5 flex flex-wrap items-end justify-between gap-3"><div><h2 className="text-xl font-bold">{tabs.find(([key]) => key === view)?.[1]}</h2><p className="text-sm text-slate-500">{manager ? "Manager view: all employee data and brokerage." : "Employee view: only your mapped data."}</p></div><div className="flex flex-wrap gap-2">{(view === "employee-clients" || (view === "trades" && manager)) && <select className="rounded-lg border p-2 text-sm" value={employeeId} onChange={(e) => setEmployeeId(e.target.value)}><option value="">{view === "trades" ? "All employees" : "Choose employee"}</option>{employees.map((employee) => <option key={employee.id} value={employee.id}>{employee.name} · {money.format(employee.brokerage || 0)}</option>)}</select>}{view === "trades" && <><input className="w-28 rounded-lg border p-2 text-sm" placeholder="Client ID" value={filters.clientId} onChange={(e) => setFilters({ ...filters, clientId: e.target.value })}/><input className="rounded-lg border p-2 text-sm" type="date" value={filters.from} onChange={(e) => setFilters({ ...filters, from: e.target.value })}/><input className="rounded-lg border p-2 text-sm" type="date" value={filters.to} onChange={(e) => setFilters({ ...filters, to: e.target.value })}/><button className="rounded-lg bg-slate-200 px-3 py-2 text-sm font-semibold" onClick={load}>Apply</button></>}</div></div>{manager && view === "employees" && <AddEmployeeForm onSubmit={addEmployee}/>} {error ? <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-amber-800">{error}</div> : loading ? <div className="rounded-xl bg-white p-12 text-center text-slate-500">Loading permitted cached data…</div> : <DataTable rows={rows}/>}</div>;
+}

@@ -2,12 +2,12 @@ const bseService = require("../services/bse.service");
 
 const getClients = async (req, res) => {
   try {
-    const clients = await bseService.getClients();
+    const clients = await bseService.getClients(req.query);
 
     return res.status(200).json({
       success: true,
-      count: clients.length,
-      data: clients,
+      count: clients.data.length,
+      ...clients,
     });
   } catch (error) {
     console.error(
@@ -27,22 +27,12 @@ const getClients = async (req, res) => {
 
 const getTrades = async (req, res) => {
   try {
-    const {
-      clientId,
-      from,
-      to,
-    } = req.query;
-
-    const trades = await bseService.getTrades({
-      clientId,
-      from,
-      to,
-    });
+    const trades = await bseService.getTrades(req.query);
 
     return res.status(200).json({
       success: true,
-      count: trades.length,
-      data: trades,
+      count: trades.data.length,
+      ...trades,
     });
   } catch (error) {
     console.error(
