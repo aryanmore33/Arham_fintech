@@ -124,14 +124,14 @@ const getTrades = async ({
   if (from) {
     filteredTrades = filteredTrades.filter(
       (trade) =>
-        trade.tradeDate >= from
+        trade.tradeDate.slice(0, 10) >= from
     );
   }
 
   if (to) {
     filteredTrades = filteredTrades.filter(
       (trade) =>
-        trade.tradeDate <= to
+        trade.tradeDate.slice(0, 10) <= to
     );
   }
 
@@ -154,7 +154,16 @@ const getTrades = async ({
 };
 
 const addDemoTrade = () => {
-  const trade = { id: `LIVE${Date.now()}`, clientId: "C001", tradeDate: new Date().toISOString().slice(0, 10), symbol: "RELIANCE", side: "BUY", quantity: 100, price: 2950, brokerage: 5000 };
+  const symbols = ["RELIANCE", "TCS", "INFY", "HDFCBANK", "ICICIBANK", "SBIN", "ITC"];
+  // C001, C020, ... are Rahul's mapped clients in the deterministic mock mapping.
+  const rahulClients = Array.from({ length: 16 }, (_, index) => `C${String(1 + index * 19).padStart(3, "0")}`);
+  const quantity = Math.floor(Math.random() * 900) + 100;
+  const price = Number((Math.random() * 4200 + 150).toFixed(2));
+  const now = new Date();
+  // Keep it newer than seeded August trades, so the newest-first portal table
+  // visibly changes immediately while the precise execution time still varies.
+  now.setMinutes(now.getMinutes() - Math.floor(Math.random() * 60 * 8));
+  const trade = { id: `LIVE${Date.now()}${Math.floor(Math.random() * 1000)}`, clientId: rahulClients[Math.floor(Math.random() * rahulClients.length)], tradeDate: now.toISOString(), symbol: symbols[Math.floor(Math.random() * symbols.length)], side: Math.random() > 0.5 ? "BUY" : "SELL", quantity, price, brokerage: Number((quantity * price * (0.0003 + Math.random() * 0.0005)).toFixed(2)) };
   trades.push(trade);
   return trade;
 };
@@ -162,8 +171,8 @@ const addDemoTrade = () => {
 const createExport = ({ resource, clientId, from, to }) => {
   let data = resource === "clients" ? clients : trades;
   if (resource === "trades" && clientId) data = data.filter((trade) => trade.clientId === clientId);
-  if (resource === "trades" && from) data = data.filter((trade) => trade.tradeDate >= from);
-  if (resource === "trades" && to) data = data.filter((trade) => trade.tradeDate <= to);
+  if (resource === "trades" && from) data = data.filter((trade) => trade.tradeDate.slice(0, 10) >= from);
+  if (resource === "trades" && to) data = data.filter((trade) => trade.tradeDate.slice(0, 10) <= to);
   const id = crypto.randomUUID();
   exportsById.set(id, { data, readyAt: Date.now() + getDelay() });
   return { id, status: "PENDING", retryAfterMs: Math.min(getDelay(), 5000) };

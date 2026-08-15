@@ -22,7 +22,7 @@ for (let i = 1; i <= 5000; i++) {
 
   const clientId = `C${String(clientNumber).padStart(3, "0")}`;
 
-  const date = new Date(2026, 7, 1 + (i % 13));
+  const date = new Date(2026, 7, 1 + (i % 13), (i * 7) % 24, (i * 11) % 60, (i * 13) % 60);
 
   // Deterministic seed-style values make demo brokerage figures stable across restarts.
   const quantity = ((i * 37) % 500) + 1;
@@ -35,7 +35,7 @@ for (let i = 1; i <= 5000; i++) {
   trades.push({
     id: `T${String(i).padStart(5, "0")}`,
     clientId,
-    tradeDate: date.toISOString().split("T")[0],
+    tradeDate: date.toISOString(),
     symbol: symbols[i % symbols.length],
     side: sides[i % sides.length],
     quantity,

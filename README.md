@@ -24,7 +24,7 @@ For a single deployed service, run `npm run build` in `frontend`; the backend de
 
 ## Demo accounts and authorization
 
-After the first successful sync, use password `password123` with `manager@arham.com` for the manager account or `rahul@arham.com` / `priya@arham.com` for employee accounts. Login returns an 8-hour JWT. The API enforces authorization server-side: managers can view every employee, mapped client, trade, brokerage total, and incentive; employees can only retrieve their own mapped clients, trades, and incentive. BSE refreshes are manager-only.
+After the first successful sync, use password `password123` with `manager@arham.com` for the manager account or `rahul@arham.com` / `priya@arham.com` for employee accounts. The API enforces authorization server-side: managers can view every employee, mapped client, trade, brokerage total, and incentive; employees can only retrieve their own mapped clients, trades, and incentive. BSE refreshes are manager-only.
 
 On a fresh database, the first manager login bootstraps `manager@arham.com` with password `password123`. In **All Employees**, the manager can add employee accounts and choose each employee's email and temporary password. In a real deployment, set `BOOTSTRAP_MANAGER_EMAIL`, `BOOTSTRAP_MANAGER_PASSWORD`, and a strong `JWT_SECRET` as environment secrets before first startup.
 
