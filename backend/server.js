@@ -42,7 +42,12 @@ app.get("/health", (req, res) => {
 app.use((err, _req, res, _next) => { console.error(err); res.status(500).json({ error: "Unable to read cached data" }); });
 const PORT = process.env.PORT || 3000;
 const server = http.createServer(app);
-const io = new Server(server, { cors: { origin: "*" } });
+const io = new Server(server, {
+  cors: {
+    origin: process.env.FRONTEND_ORIGIN,
+    credentials: true,
+  },
+});
 app.set("io", io);
 
 server.listen(PORT, () => {
