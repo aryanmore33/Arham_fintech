@@ -31,7 +31,8 @@ router.get("/employees", requireManager, async (_req, res, next) => { try {
 } catch (e) { next(e); } });
 router.post("/employees", requireManager, async (req, res, next) => { try {
   const { name, email, password } = req.body;
-  if (!name || !email || !password || password.length < 8) return res.status(400).json({ error: "Name, email, and an 8-character password are required" });
+  const validPassword = password && password.length >= 6 && /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]+$/.test(password);
+  if (!name || !email || !validPassword) return res.status(400).json({ error: "Name, email, and a 6-character password containing letters and numbers are required" });
   const [employee] = await db("employees").insert({ id: randomUUID(), name, email: email.toLowerCase(), role: "EMPLOYEE", password_hash: await bcrypt.hash(password, 10) }).returning(["id", "name", "email", "role"]);
   res.status(201).json({ data: employee });
 } catch (e) { if (e.code === "23505") return res.status(409).json({ error: "That email is already in use" }); next(e); } });

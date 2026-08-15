@@ -1,11 +1,12 @@
-import { createContext, useContext, useState } from "react";
-import { login as loginRequest } from "../api/auth";
+import { createContext, useContext, useEffect, useState } from "react";
+import { getMe, login as loginRequest, logout as logoutRequest } from "../api/auth";
 
 const AuthContext = createContext(null);
 export function AuthProvider({ children }) {
-  const [session, setSession] = useState(() => JSON.parse(localStorage.getItem("arham-session") || "null"));
-  const login = async (credentials) => { const result = await loginRequest(credentials); localStorage.setItem("arham-session", JSON.stringify(result)); setSession(result); };
-  const logout = () => { localStorage.removeItem("arham-session"); setSession(null); };
-  return <AuthContext.Provider value={{ session, user: session?.user, login, logout }}>{children}</AuthContext.Provider>;
+  const [session, setSession] = useState(null), [loading, setLoading] = useState(true);
+  useEffect(() => { getMe().then((result) => setSession({ user: result.data })).catch(() => setSession(null)).finally(() => setLoading(false)); }, []);
+  const login = async (credentials) => { const result = await loginRequest(credentials); setSession(result); };
+  const logout = async () => { await logoutRequest(); setSession(null); };
+  return <AuthContext.Provider value={{ session, user: session?.user, loading, login, logout }}>{children}</AuthContext.Provider>;
 }
 export const useAuth = () => useContext(AuthContext);

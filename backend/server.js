@@ -2,6 +2,9 @@ require("dotenv").config();
 
 const express = require("express");
 const cors = require("cors");
+const cookieParser = require("cookie-parser");
+const helmet = require("helmet");
+const rateLimit = require("express-rate-limit");
 const path = require("path");
 const fs = require("fs");
 const http = require("http");
@@ -11,8 +14,12 @@ const authRoutes = require("./src/routes/auth.routes");
 
 const app = express();
 
-app.use(cors());
+app.set("trust proxy", 1);
+app.use(helmet({ crossOriginResourcePolicy: false }));
+app.use(cors({ origin: process.env.FRONTEND_ORIGIN || "http://localhost:5173", credentials: true }));
 app.use(express.json());
+app.use(cookieParser());
+app.use(rateLimit({ windowMs: 15 * 60 * 1000, limit: 300, standardHeaders: true, legacyHeaders: false }));
 app.use("/auth", authRoutes);
 app.use("/api", portalRoutes);
 const frontendBuild = path.join(__dirname, "..", "frontend", "dist");
