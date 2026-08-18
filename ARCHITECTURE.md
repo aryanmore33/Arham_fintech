@@ -26,9 +26,6 @@ BSE data is synchronized asynchronously by a Node.js worker and stored in Postgr
                        |
                        v
                   Dashboard
-                       ^
-                       |
-                   Socket.IO
 ```
 
 ---
@@ -53,9 +50,7 @@ This keeps the API responsive while a long-running BSE synchronization is in pro
 
 ## 2. Scheduler
 
-A scheduler/cron job periodically starts the synchronization worker.
-
-This makes BSE synchronization automatic and independent of user requests.
+A scheduler starts synchronization worker based on demand of manager.
 
 The application therefore has two separate workloads:
 
